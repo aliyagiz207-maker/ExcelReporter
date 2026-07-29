@@ -1,11 +1,5 @@
-import pandas as pd
-
-
-def calculate_kpis(df: pd.DataFrame) -> dict:
-    """
-    Temel KPI'ları hesaplar ve sözlük (dict) olarak döndürür.
-    """
-
+def calculate_kpis(df):
+    # KPI hesaplamaları
     total_quantity = df["Quantity"].sum()
 
     total_revenue = (df["Quantity"] * df["UnitPrice"]).sum()
@@ -14,15 +8,30 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
 
     total_profit = total_revenue - total_cost
 
-    if total_revenue == 0:
-        profit_margin = 0
-    else:
-        profit_margin = (total_profit / total_revenue) * 100
+    profit_margin = (total_profit / total_revenue) * 100
 
-    return {
+    kpis = {
         "Total Quantity": total_quantity,
         "Total Revenue": total_revenue,
         "Total Cost": total_cost,
         "Total Profit": total_profit,
-        "Profit Margin": profit_margin
+        "Profit Margin": profit_margin,
     }
+
+    # Bölgelere göre gelir özeti
+    region_summary = (
+        df.assign(Revenue=df["Quantity"] * df["UnitPrice"])
+        .groupby("Region", as_index=False)["Revenue"]
+        .sum()
+        .sort_values("Revenue", ascending=False)
+    )
+
+    # Ürünlere göre gelir özeti
+    product_summary = (
+        df.assign(Revenue=df["Quantity"] * df["UnitPrice"])
+        .groupby("Product", as_index=False)["Revenue"]
+        .sum()
+        .sort_values("Revenue", ascending=False)
+    )
+
+    return kpis, region_summary, product_summary
