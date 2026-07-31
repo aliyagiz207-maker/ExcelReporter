@@ -7,13 +7,13 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import BarChart, Reference
 
 
-def generate_report(kpis, region_summary, product_summary, df):
+def generate_report(kpis, region_summary, product_summary, df, config):
     project_root = Path(__file__).resolve().parent.parent
 
     template_file = project_root / "templates" / "report_template.xlsx"
-    output_file = project_root / "data" / "output" / "Report.xlsx"
+    output_file = project_root / config["output_file"]
 
-    logo_file = project_root / "assets" / "logo.png"
+    logo_file = project_root / config["logo_path"]
 
     workbook = load_workbook(template_file)
     sheet = workbook["Dashboard"]
@@ -31,7 +31,7 @@ def generate_report(kpis, region_summary, product_summary, df):
     )
 
 # Dashboard başlığı
-    sheet["A1"] = "Excel Reporter Dashboard"
+    sheet["A1"] = config["dashboard_title"]
     sheet["A1"].font = Font(size=16, bold=True, color="FFFFFF")
     sheet["A1"].fill = PatternFill(
         fill_type="solid",
@@ -55,12 +55,12 @@ def generate_report(kpis, region_summary, product_summary, df):
                 sheet[f"B{row}"].number_format = "0.00%"
             else:
                 sheet[f"B{row}"] = value
-                sheet[f"B{row}"].number_format = "₺#,##0.00"
+                sheet[f"B{row}"].number_format = f'{config["currency"]}#,##0.00'
         else:
             sheet[f"B{row}"] = value
 
             if "Quantity" not in key:
-                sheet[f"B{row}"].number_format = "₺#,##0"
+                sheet[f"B{row}"].number_format = f'{config["currency"]}#,##0'
 
         sheet[f"A{row}"].border = thin_border
         sheet[f"B{row}"].border = thin_border

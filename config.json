@@ -1,0 +1,7 @@
+{
+    "company_name": "Honda Terakki",
+    "dashboard_title": "Monthly Sales Dashboard",
+    "currency": "$",
+    "logo_path": "assets/logo.png",
+    "output_file": "data/output/Honda_Report.xlsx"
+}

@@ -1,3 +1,5 @@
+from config_loader import load_config
+from file_manager import archive_report
 from pathlib import Path
 
 from excel_reader import read_excel_folder
@@ -14,6 +16,7 @@ def main():
     logger.info("Program başlatıldı.")
 
     project_root = Path(__file__).resolve().parent.parent
+    config = load_config()
 
     input_folder = project_root / "data" / "input"
 
@@ -27,7 +30,11 @@ def main():
 
     kpis, region_summary, product_summary = calculate_kpis(df)
 
-    generate_report(kpis, region_summary, product_summary, df)
+    generate_report(kpis, region_summary, product_summary, df, config)
+    report_file = project_root / "data" / "output" / "Report.xlsx"
+    archive_folder = project_root / "data" / "archive"
+
+    archive_report(report_file, archive_folder)
 
     print("\n=== İlk 5 Satır ===")
     print(df.head())
