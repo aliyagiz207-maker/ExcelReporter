@@ -1,5 +1,6 @@
+from openpyxl.drawing.image import Image
 from pathlib import Path
-
+from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -12,8 +13,15 @@ def generate_report(kpis, region_summary, product_summary, df):
     template_file = project_root / "templates" / "report_template.xlsx"
     output_file = project_root / "data" / "output" / "Report.xlsx"
 
+    logo_file = project_root / "assets" / "logo.png"
+
     workbook = load_workbook(template_file)
     sheet = workbook["Dashboard"]
+    if logo_file.exists():
+        logo = Image(logo_file)
+        logo.width = 140
+        logo.height = 70
+        sheet.add_image(logo, "G1")
 
     thin_border = Border(
         left=Side(style="thin"),
@@ -22,7 +30,7 @@ def generate_report(kpis, region_summary, product_summary, df):
         bottom=Side(style="thin"),
     )
 
-    # Dashboard başlığı
+# Dashboard başlığı
     sheet["A1"] = "Excel Reporter Dashboard"
     sheet["A1"].font = Font(size=16, bold=True, color="FFFFFF")
     sheet["A1"].fill = PatternFill(
@@ -31,6 +39,9 @@ def generate_report(kpis, region_summary, product_summary, df):
         end_color="1F4E78",
     )
     sheet["A1"].alignment = Alignment(horizontal="center")
+
+    sheet["A2"] = f"Generated: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
+    sheet["A2"].font = Font(italic=True)
 
 # KPI
     row = 3
@@ -110,7 +121,7 @@ def generate_report(kpis, region_summary, product_summary, df):
 
     sheet.add_chart(chart, "G3")
 
-    # Top Products
+# Top Products
     sheet["D11"] = "Top Products"
     sheet["D11"].font = Font(size=14, bold=True)
 
