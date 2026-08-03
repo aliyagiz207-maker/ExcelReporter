@@ -3,7 +3,7 @@ import argparse
 from config_loader import load_config
 from file_manager import archive_report
 from pathlib import Path
-
+from pdf_report import generate_pdf_report
 from excel_reader import read_excel_folder
 from validator import validate_dataframe
 from data_cleaner import clean_data
@@ -43,6 +43,7 @@ def main():
     kpis, region_summary, product_summary = calculate_kpis(df)
 
     generate_report(kpis, region_summary, product_summary, df, config)
+    generate_pdf_report(kpis, config)
     report_file = project_root / config["output_file"]
     archive_folder = project_root / "data" / "archive"
 
