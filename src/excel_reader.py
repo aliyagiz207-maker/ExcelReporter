@@ -10,16 +10,30 @@ def read_excel(file_path: Path) -> pd.DataFrame:
     return pd.read_excel(file_path)
 
 
-def read_excel_folder(folder_path: Path) -> pd.DataFrame:
+def read_excel_folder(
+    folder_path: Path,
+    selected_months: list[str] | None = None
+) -> pd.DataFrame:
     """
-    Klasördeki tüm Excel dosyalarını okuyup tek DataFrame'e birleştirir.
+    Klasördeki Excel dosyalarını okuyup tek DataFrame'e birleştirir.
+
+    selected_months örnek:
+    ["january", "march"]
     """
 
     excel_files = sorted(folder_path.glob("*.xlsx"))
 
+    if selected_months:
+        selected_months = [m.lower() for m in selected_months]
+
+        excel_files = [
+            file for file in excel_files
+            if file.stem.lower() in selected_months
+        ]
+
     if not excel_files:
         raise FileNotFoundError(
-            f"'{folder_path}' klasöründe hiç Excel dosyası bulunamadı."
+            "Seçilen kriterlere uygun Excel dosyası bulunamadı."
         )
 
     dataframes = []

@@ -1,3 +1,5 @@
+import argparse
+
 from config_loader import load_config
 from file_manager import archive_report
 from pathlib import Path
@@ -11,6 +13,16 @@ from logger import setup_logger
 
 
 def main():
+    parser = argparse.ArgumentParser(
+    description="Excel Reporter")
+
+    parser.add_argument(
+    "--month",
+    nargs="*",
+    help="Read only selected Excel files (without .xlsx)")
+
+    args = parser.parse_args()
+
     logger = setup_logger()
 
     logger.info("Program başlatıldı.")
@@ -20,7 +32,7 @@ def main():
 
     input_folder = project_root / "data" / "input"
 
-    df = read_excel_folder(input_folder)
+    df = read_excel_folder(input_folder,selected_months=args.month)
 
     logger.info("Excel dosyaları başarıyla okundu.")
 
