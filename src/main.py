@@ -43,7 +43,7 @@ def main():
     kpis, region_summary, product_summary = calculate_kpis(df)
 
     generate_report(kpis, region_summary, product_summary, df, config)
-    report_file = project_root / "data" / "output" / "Report.xlsx"
+    report_file = project_root / config["output_file"]
     archive_folder = project_root / "data" / "archive"
 
     archive_report(report_file, archive_folder)

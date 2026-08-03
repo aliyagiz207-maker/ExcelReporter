@@ -1,27 +1,20 @@
-from openpyxl.drawing.image import Image
+from openpyxl import Workbook
 from pathlib import Path
-from datetime import datetime
-from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import BarChart, Reference
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 
 def generate_report(kpis, region_summary, product_summary, df, config):
     project_root = Path(__file__).resolve().parent.parent
 
-    template_file = project_root / "templates" / "report_template.xlsx"
     output_file = project_root / config["output_file"]
 
-    logo_file = project_root / config["logo_path"]
 
-    workbook = load_workbook(template_file)
-    sheet = workbook["Dashboard"]
-    if logo_file.exists():
-        logo = Image(logo_file)
-        logo.width = 140
-        logo.height = 70
-        sheet.add_image(logo, "G1")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Dashboard"
 
     thin_border = Border(
         left=Side(style="thin"),
@@ -30,7 +23,20 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         bottom=Side(style="thin"),
     )
 
-# Dashboard başlığı
+    # -------------------------------------------------
+    # Logo
+    # -------------------------------------------------
+    logo_file = project_root / config["logo_path"]
+
+    if logo_file.exists():
+        logo = Image(logo_file)
+        logo.width = 120
+        logo.height = 60
+        sheet.add_image(logo, "G1")
+
+    # -------------------------------------------------
+    # Başlık
+    # -------------------------------------------------
     sheet["A1"] = config["dashboard_title"]
     sheet["A1"].font = Font(size=16, bold=True, color="FFFFFF")
     sheet["A1"].fill = PatternFill(
@@ -40,27 +46,38 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     )
     sheet["A1"].alignment = Alignment(horizontal="center")
 
-    sheet["A2"] = f"Generated: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
-    sheet["A2"].font = Font(italic=True)
+    sheet["A2"] = config["company_name"]
+    sheet["A2"].font = Font(size=12, italic=True)
 
-# KPI
+    # -------------------------------------------------
+    # KPI
+    # -------------------------------------------------
     row = 3
 
     for key, value in kpis.items():
+
         sheet[f"A{row}"] = key
 
         if isinstance(value, float):
+
             if "Margin" in key:
                 sheet[f"B{row}"] = value / 100
                 sheet[f"B{row}"].number_format = "0.00%"
+
             else:
                 sheet[f"B{row}"] = value
-                sheet[f"B{row}"].number_format = f'{config["currency"]}#,##0.00'
+                sheet[f"B{row}"].number_format = (
+                    f'{config["currency"]}#,##0.00'
+                )
+
         else:
+
             sheet[f"B{row}"] = value
 
             if "Quantity" not in key:
-                sheet[f"B{row}"].number_format = f'{config["currency"]}#,##0'
+                sheet[f"B{row}"].number_format = (
+                    f'{config["currency"]}#,##0'
+                )
 
         sheet[f"A{row}"].border = thin_border
         sheet[f"B{row}"].border = thin_border
@@ -70,7 +87,9 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     sheet.column_dimensions["A"].width = 24
     sheet.column_dimensions["B"].width = 18
 
-# Region Summary
+    # -------------------------------------------------
+    # Region Summary
+    # -------------------------------------------------
     sheet["D2"] = "Revenue by Region"
     sheet["D2"].font = Font(size=14, bold=True)
 
@@ -85,14 +104,18 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     for _, row_data in region_summary.iterrows():
         sheet[f"D{start_row}"] = row_data["Region"]
         sheet[f"E{start_row}"] = row_data["Revenue"]
-        sheet[f"E{start_row}"].number_format = "₺#,##0"
+        sheet[f"E{start_row}"].number_format = (
+            f'{config["currency"]}#,##0'
+        )
 
         start_row += 1
 
     sheet.column_dimensions["D"].width = 18
     sheet.column_dimensions["E"].width = 18
 
-# Grafik
+    # -------------------------------------------------
+    # Grafik
+    # -------------------------------------------------
     chart = BarChart()
 
     data = Reference(
@@ -121,7 +144,9 @@ def generate_report(kpis, region_summary, product_summary, df, config):
 
     sheet.add_chart(chart, "G3")
 
-# Top Products
+    # -------------------------------------------------
+    # Top Products
+    # -------------------------------------------------
     sheet["D11"] = "Top Products"
     sheet["D11"].font = Font(size=14, bold=True)
 
@@ -136,11 +161,15 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     for _, row_data in product_summary.iterrows():
         sheet[f"D{product_row}"] = row_data["Product"]
         sheet[f"E{product_row}"] = row_data["Revenue"]
-        sheet[f"E{product_row}"].number_format = "₺#,##0"
+        sheet[f"E{product_row}"].number_format = (
+            f'{config["currency"]}#,##0'
+        )
 
         product_row += 1
 
-# Detail Data sayfası
+    # -------------------------------------------------
+    # Detail Data
+    # -------------------------------------------------
     if "Detail Data" in workbook.sheetnames:
         del workbook["Detail Data"]
 
@@ -149,7 +178,12 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     for row_data in dataframe_to_rows(df, index=False, header=True):
         detail_sheet.append(row_data)
 
-# Başlık biçimlendirme
+    detail_sheet.freeze_panes = "A2"
+    detail_sheet.auto_filter.ref = detail_sheet.dimensions
+
+    # -------------------------------------------------
+    # Başlık biçimlendirme
+    # -------------------------------------------------
     for cell in detail_sheet[1]:
         cell.font = Font(bold=True, color="FFFFFF")
         cell.fill = PatternFill(
@@ -160,14 +194,18 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         cell.alignment = Alignment(horizontal="center")
         cell.border = thin_border
 
-# Sütun genişlikleri
+    # -------------------------------------------------
+    # Sütun genişlikleri
+    # -------------------------------------------------
     for column_cells in detail_sheet.columns:
         length = max(
             len(str(cell.value)) if cell.value is not None else 0
             for cell in column_cells
         )
+
         detail_sheet.column_dimensions[
             column_cells[0].column_letter
         ].width = length + 3
 
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_file)
