@@ -17,7 +17,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     after_dropna = len(df)
 
     # Tekrar eden kayıtları kaldır
-    df = df.drop_duplicates()
+    df = df.drop_duplicates().reset_index(drop=True)
 
     final_rows = len(df)
 

@@ -1,34 +1,28 @@
 # Excel Reporter
 
-Excel Reporter is a Python application that automates business Excel reporting.
-
-The application reads one or multiple Excel files, validates and cleans the data, calculates KPIs, generates a professional Excel dashboard, creates a PDF summary report, and archives every generated report automatically.
+Excel Reporter, işletmeler için Excel ve CSV dosyalarını otomatik olarak analiz eden, KPI hesaplayan ve Excel ile PDF formatında rapor oluşturan Python tabanlı bir otomasyon uygulamasıdır.
 
 ---
 
-## Features
+## Özellikler
 
-- Read one or multiple Excel files
-- Select specific months from the command line
-- Automatic data validation
-- Automatic data cleaning
-- KPI calculation
-- Revenue by Region analysis
-- Top Products analysis
-- Professional Excel Dashboard
-- Detail Data sheet with:
-  - Auto Filter
-  - Freeze Header
-  - Auto column width
-- Company logo support
-- JSON configuration
-- Automatic report archiving
-- PDF report generation
-- Logging with Loguru
+- Birden fazla Excel dosyasını otomatik okuma
+- CSV dosyalarını destekleme
+- Veri doğrulama
+- Veri temizleme
+- KPI (Temel Performans Göstergeleri) hesaplama
+- Excel Dashboard oluşturma
+- PDF raporu oluşturma
+- Bölgelere göre gelir analizi
+- En çok gelir getiren ürünler analizi
+- Firma logosu desteği
+- Otomatik rapor arşivleme
+- JSON ile yapılandırılabilir yapı
+- Ay bazlı raporlama (`--month` parametresi)
 
 ---
 
-## Technologies
+## Kullanılan Teknolojiler
 
 - Python 3
 - Pandas
@@ -38,16 +32,19 @@ The application reads one or multiple Excel files, validates and cleans the data
 
 ---
 
-## Project Structure
+## Proje Yapısı
 
 ```text
 ExcelReporter/
 │
 ├── assets/
+│   └── logo.png
+│
 ├── data/
 │   ├── archive/
 │   ├── input/
 │   └── output/
+│
 ├── logs/
 ├── src/
 ├── config.json
@@ -57,35 +54,57 @@ ExcelReporter/
 
 ---
 
-## Installation
+## Kurulum
+
+Projeyi bilgisayarınıza indirin:
 
 ```bash
 git clone https://github.com/aliyagiz207-maker/ExcelReporter.git
+```
 
+Proje klasörüne girin:
+
+```bash
 cd ExcelReporter
+```
 
+Sanal ortam oluşturun:
+
+```bash
 python -m venv .venv
+```
 
+Sanal ortamı etkinleştirin:
+
+**Windows**
+
+```bash
 .venv\Scripts\activate
+```
 
+Gerekli kütüphaneleri yükleyin:
+
+```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-## Usage
+## Kullanım
 
-Run with all Excel files:
+Tüm Excel ve CSV dosyalarını işlemek için:
 
 ```bash
 python src/main.py
 ```
 
-Run only selected months:
+Sadece belirli ayları işlemek için:
 
 ```bash
 python src/main.py --month january
 ```
+
+Birden fazla ay seçmek için:
 
 ```bash
 python src/main.py --month january march
@@ -93,26 +112,22 @@ python src/main.py --month january march
 
 ---
 
-## Output
+## Oluşturulan Çıktılar
 
-The application generates:
+Program çalıştırıldığında aşağıdaki dosyalar oluşturulur:
 
-- Excel Dashboard (.xlsx)
-- PDF Report (.pdf)
-- Archived Excel Reports
-- Application Logs
+- Excel Dashboard (`.xlsx`)
+- PDF Raporu (`.pdf`)
+- Arşivlenmiş Excel raporları
+- Uygulama logları
 
 ---
 
-## Configuration
+## Yapılandırma
 
-All application settings can be changed from:
+Tüm uygulama ayarları `config.json` dosyası üzerinden değiştirilebilir.
 
-```
-config.json
-```
-
-Example:
+Örnek:
 
 ```json
 {
@@ -126,6 +141,23 @@ Example:
 
 ---
 
-## Author
+## Gelecek Sürümler
 
-Ali Yağız
+Planlanan geliştirmeler:
+
+- Dashboard grafiklerinin geliştirilmesi
+- Daha fazla grafik türü
+- Komut satırı seçeneklerinin artırılması
+- Web arayüzü
+- E-posta ile otomatik rapor gönderimi
+- Bulut depolama desteği
+
+---
+
+## Geliştirici
+
+**Ali Yağız Demir**
+
+
+GitHub:
+https://github.com/aliyagiz207-maker
