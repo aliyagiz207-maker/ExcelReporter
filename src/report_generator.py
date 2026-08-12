@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -8,8 +9,14 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 
 
 def generate_report(kpis, region_summary, product_summary, df, config):
-    project_root = Path(__file__).resolve().parent.parent
-    output_file = project_root / config["output_file"]
+    if getattr(sys, "frozen", False):
+        application_root = Path(sys.executable).resolve().parent
+        resource_root = Path(sys._MEIPASS)
+    else:
+        application_root = Path(__file__).resolve().parent.parent
+        resource_root = application_root
+
+    output_file = application_root / config["output_file"]
 
     workbook = Workbook()
     sheet = workbook.active
@@ -40,7 +47,7 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     # -------------------------------------------------
     # Logo
     # -------------------------------------------------
-    logo_file = project_root / config["logo_path"]
+    logo_file = resource_root / config["logo_path"]
 
     if logo_file.exists():
         logo = Image(logo_file)

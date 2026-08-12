@@ -36,3 +36,6 @@ data/archive/
 # Windows
 
 Thumbs.db
+# PyInstaller
+build/
+dist/
