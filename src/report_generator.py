@@ -3,12 +3,17 @@ from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
 
 
 def generate_report(kpis, region_summary, product_summary, df, config):
+    # -------------------------------------------------
+    # Uygulama / Resource Root
+    # -------------------------------------------------
     if getattr(sys, "frozen", False):
         application_root = Path(sys.executable).resolve().parent
         resource_root = Path(sys._MEIPASS)
@@ -18,31 +23,73 @@ def generate_report(kpis, region_summary, product_summary, df, config):
 
     output_file = application_root / config["output_file"]
 
+    # -------------------------------------------------
+    # Workbook
+    # -------------------------------------------------
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Dashboard"
 
     # -------------------------------------------------
-    # Stiller
+    # Renkler / Stiller
     # -------------------------------------------------
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin"),
-    )
-
     header_fill = PatternFill(
         fill_type="solid",
         start_color="1F4E78",
         end_color="1F4E78",
     )
 
-    kpi_fill = PatternFill(
+    section_fill = PatternFill(
         fill_type="solid",
         start_color="D9EAF7",
         end_color="D9EAF7",
     )
+
+    kpi_fill = PatternFill(
+        fill_type="solid",
+        start_color="EAF2F8",
+        end_color="EAF2F8",
+    )
+
+    white_fill = PatternFill(
+        fill_type="solid",
+        start_color="FFFFFF",
+        end_color="FFFFFF",
+    )
+
+    thin_border = Border(
+        left=Side(style="thin", color="D9E2F3"),
+        right=Side(style="thin", color="D9E2F3"),
+        top=Side(style="thin", color="D9E2F3"),
+        bottom=Side(style="thin", color="D9E2F3"),
+    )
+
+    # -------------------------------------------------
+    # Dashboard Genel Ayarlar
+    # -------------------------------------------------
+    sheet.sheet_view.showGridLines = False
+    sheet.sheet_view.zoomScale = 85
+    sheet.freeze_panes = "A5"
+
+    widths = {
+        "A": 20,
+        "B": 17,
+        "C": 17,
+        "D": 17,
+        "E": 17,
+        "F": 17,
+        "G": 17,
+        "H": 17,
+        "I": 17,
+        "J": 17,
+        "K": 4,
+        "L": 17,
+        "M": 17,
+        "N": 17,
+    }
+
+    for column, width in widths.items():
+        sheet.column_dimensions[column].width = width
 
     # -------------------------------------------------
     # Logo
@@ -51,31 +98,42 @@ def generate_report(kpis, region_summary, product_summary, df, config):
 
     if logo_file.exists():
         logo = Image(logo_file)
-        logo.width = 120
-        logo.height = 60
-        sheet.add_image(logo, "G1")
+        logo.width = 150
+        logo.height = 75
+        sheet.add_image(logo, "L1")
 
     # -------------------------------------------------
     # Başlık
     # -------------------------------------------------
-    sheet.merge_cells("A1:B1")
+    sheet.merge_cells("A1:J1")
 
     sheet["A1"] = config["dashboard_title"]
     sheet["A1"].font = Font(
-        size=16,
+        size=20,
         bold=True,
         color="FFFFFF",
     )
     sheet["A1"].fill = header_fill
     sheet["A1"].alignment = Alignment(
-        horizontal="center",
+        horizontal="left",
         vertical="center",
     )
+
+    sheet.row_dimensions[1].height = 32
+
+    # -------------------------------------------------
+    # Şirket
+    # -------------------------------------------------
+    sheet.merge_cells("A2:J2")
 
     sheet["A2"] = config["company_name"]
     sheet["A2"].font = Font(
         size=12,
-        italic=True,
+        bold=True,
+        color="404040",
+    )
+    sheet["A2"].alignment = Alignment(
+        vertical="center",
     )
 
     # -------------------------------------------------
@@ -91,78 +149,131 @@ def generate_report(kpis, region_summary, product_summary, df, config):
             f"{max_date.strftime('%d.%m.%Y')}"
         )
 
+        sheet.merge_cells("A3:J3")
+
         sheet["A3"] = period_text
         sheet["A3"].font = Font(
             size=10,
             italic=True,
+            color="666666",
         )
 
     # -------------------------------------------------
-    # KPI
+    # KPI Kartları
     # -------------------------------------------------
-    row = 5
+    kpi_positions = [
+        ("A5:B7", "A5", "A6"),
+        ("C5:D7", "C5", "C6"),
+        ("E5:F7", "E5", "E6"),
+        ("G5:H7", "G5", "G6"),
+        ("I5:J7", "I5", "I6"),
+    ]
 
-    for key, value in kpis.items():
-        label_cell = sheet[f"A{row}"]
-        value_cell = sheet[f"B{row}"]
+    kpi_items = list(kpis.items())
 
-        label_cell.value = key
-        label_cell.font = Font(bold=True)
-        label_cell.fill = kpi_fill
-        label_cell.border = thin_border
-        label_cell.alignment = Alignment(
-            vertical="center"
+    for index, (key, value) in enumerate(kpi_items[:5]):
+        merge_range, label_cell, value_cell = kpi_positions[index]
+
+        sheet.merge_cells(merge_range)
+        sheet.unmerge_cells(merge_range)
+
+        start_col = sheet[label_cell].column
+        start_row = 5
+
+        end_col = start_col + 1
+
+        start_letter = get_column_letter(start_col)
+        end_letter = get_column_letter(end_col)
+
+        sheet.merge_cells(
+            f"{start_letter}5:{end_letter}5"
         )
 
-        value_cell.fill = kpi_fill
-        value_cell.border = thin_border
-        value_cell.alignment = Alignment(
-            horizontal="right"
+        sheet.merge_cells(
+            f"{start_letter}6:{end_letter}7"
         )
+
+        label = sheet[f"{start_letter}5"]
+        value_cell_obj = sheet[f"{start_letter}6"]
+
+        label.value = key
+        label.fill = kpi_fill
+        label.font = Font(
+            size=10,
+            bold=True,
+            color="44546A",
+        )
+        label.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+        )
+        label.border = thin_border
+
+        value_cell_obj.fill = kpi_fill
+        value_cell_obj.font = Font(
+            size=16,
+            bold=True,
+            color="1F4E78",
+        )
+        value_cell_obj.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+        )
+        value_cell_obj.border = thin_border
 
         if isinstance(value, float):
-
             if "Margin" in key:
-                value_cell.value = value / 100
-                value_cell.number_format = "0.00%"
-
+                value_cell_obj.value = value / 100
+                value_cell_obj.number_format = "0.00%"
             else:
-                value_cell.value = value
-                value_cell.number_format = (
+                value_cell_obj.value = value
+                value_cell_obj.number_format = (
                     f'{config["currency"]}#,##0.00'
                 )
-
         else:
-            value_cell.value = value
+            value_cell_obj.value = value
 
             if "Quantity" not in key:
-                value_cell.number_format = (
+                value_cell_obj.number_format = (
                     f'{config["currency"]}#,##0'
                 )
 
-        row += 1
-
-    sheet.column_dimensions["A"].width = 30
-    sheet.column_dimensions["B"].width = 18
-
     # -------------------------------------------------
-    # Region Summary
+    # Bölge Analizi
+    # (kpi_calculator.calculate_kpis'ten gelen
+    # region_summary kullanılır; burada tekrar
+    # hesaplanmaz.)
     # -------------------------------------------------
-    region_summary = region_summary.sort_values(
-        "Revenue",
-        ascending=False,
-    ).reset_index(drop=True)
-
-    sheet["D2"] = "Revenue by Region"
-    sheet["D2"].font = Font(
-        size=14,
-        bold=True,
+    region_analysis = (
+        region_summary
+        .sort_values("Revenue", ascending=False)
+        .reset_index(drop=True)
     )
 
-    sheet["D3"] = "Region"
-    sheet["E3"] = "Revenue"
+    # -------------------------------------------------
+    # Bölge Tablosu
+    # -------------------------------------------------
+    sheet["A10"] = "Regional Performance"
+    sheet["A10"].font = Font(
+        size=14,
+        bold=True,
+        color="1F1F1F",
+    )
 
-    for cell in sheet["D3:E3"][0]:
+    headers = [
+        "Region",
+        "Revenue",
+        "Profit",
+        "Margin",
+    ]
+
+    for column_index, header in enumerate(headers, start=1):
+        cell = sheet.cell(
+            row=11,
+            column=column_index,
+        )
+
+        cell.value = header
         cell.font = Font(
             bold=True,
             color="FFFFFF",
@@ -173,80 +284,158 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         )
         cell.border = thin_border
 
-    start_row = 4
+    region_row = 12
 
-    for _, row_data in region_summary.iterrows():
-        sheet[f"D{start_row}"] = row_data["Region"]
-        sheet[f"E{start_row}"] = row_data["Revenue"]
+    for _, row_data in region_analysis.iterrows():
+        sheet.cell(
+            row=region_row,
+            column=1,
+            value=row_data["Region"],
+        )
 
-        sheet[f"D{start_row}"].border = thin_border
-        sheet[f"E{start_row}"].border = thin_border
+        sheet.cell(
+            row=region_row,
+            column=2,
+            value=row_data["Revenue"],
+        )
 
-        sheet[f"E{start_row}"].number_format = (
+        sheet.cell(
+            row=region_row,
+            column=3,
+            value=row_data["Profit"],
+        )
+
+        sheet.cell(
+            row=region_row,
+            column=4,
+            value=row_data["Margin"] / 100,
+        )
+
+        for column_index in range(1, 5):
+            cell = sheet.cell(
+                row=region_row,
+                column=column_index,
+            )
+
+            cell.border = thin_border
+
+            if column_index > 1:
+                cell.alignment = Alignment(
+                    horizontal="right"
+                )
+
+        sheet.cell(
+            row=region_row,
+            column=2,
+        ).number_format = (
             f'{config["currency"]}#,##0'
         )
 
-        start_row += 1
+        sheet.cell(
+            row=region_row,
+            column=3,
+        ).number_format = (
+            f'{config["currency"]}#,##0'
+        )
 
-    sheet.column_dimensions["D"].width = 18
-    sheet.column_dimensions["E"].width = 18
+        sheet.cell(
+            row=region_row,
+            column=4,
+        ).number_format = "0.00%"
+
+        region_row += 1
 
     # -------------------------------------------------
-    # Region Grafiği
+    # Bölge Grafiği
     # -------------------------------------------------
-    chart = BarChart()
+    region_chart = BarChart()
 
-    data = Reference(
+    region_data_ref = Reference(
         sheet,
-        min_col=5,
-        min_row=3,
-        max_row=start_row - 1,
+        min_col=2,
+        min_row=11,
+        max_row=region_row - 1,
     )
 
-    categories = Reference(
+    region_categories = Reference(
         sheet,
-        min_col=4,
-        min_row=4,
-        max_row=start_row - 1,
+        min_col=1,
+        min_row=12,
+        max_row=region_row - 1,
     )
 
-    chart.add_data(
-        data,
+    region_chart.add_data(
+        region_data_ref,
         titles_from_data=True,
     )
 
-    chart.set_categories(categories)
+    region_chart.set_categories(
+        region_categories
+    )
 
-    chart.title = "Revenue by Region"
-    chart.y_axis.title = "Revenue"
-    chart.x_axis.title = "Region"
+    region_chart.type = "bar"
+    region_chart.style = 10
+    region_chart.title = "Revenue by Region"
+    region_chart.y_axis.title = "Region"
+    region_chart.x_axis.title = "Revenue"
 
-    chart.style = 10
-    chart.width = 12
-    chart.height = 7
+    region_chart.width = 13
+    region_chart.height = 6.5
 
-    sheet.add_chart(chart, "G3")
+    region_chart.legend = None
+
+    region_chart.dataLabels = DataLabelList()
+    region_chart.dataLabels.showVal = True
+    region_chart.dataLabels.showSerName = False
+    region_chart.dataLabels.showCatName = False
+    region_chart.dataLabels.showLegendKey = False
+    region_chart.dataLabels.dLblPos = "outEnd"
+
+    region_chart.gapWidth = 60
+
+    sheet.add_chart(
+        region_chart,
+        "F10",
+    )
 
     # -------------------------------------------------
-    # Top 5 Products
+    # Ürün Analizi
+    # (kpi_calculator.calculate_kpis'ten gelen
+    # product_summary kullanılır; burada tekrar
+    # hesaplanmaz.)
     # -------------------------------------------------
-    product_summary = (
+    product_analysis = (
         product_summary
         .sort_values("Revenue", ascending=False)
         .head(5)
         .reset_index(drop=True)
     )
 
-    sheet["D11"] = "Top 5 Products"
-    sheet["D11"].font = Font(
+    # -------------------------------------------------
+    # Top 5 Products Tablosu
+    # -------------------------------------------------
+    sheet["A20"] = "Top 5 Products"
+    sheet["A20"].font = Font(
         size=14,
         bold=True,
+        color="1F1F1F",
     )
 
-    sheet["D12"] = "Product"
-    sheet["E12"] = "Revenue"
+    for column_index, header in enumerate(
+        [
+            "Product",
+            "Revenue",
+            "Profit",
+            "Margin",
+        ],
+        start=1,
+    ):
+        cell = sheet.cell(
+            row=21,
+            column=column_index,
+        )
 
-    for cell in sheet["D12:E12"][0]:
+        cell.value = header
         cell.font = Font(
             bold=True,
             color="FFFFFF",
@@ -257,18 +446,64 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         )
         cell.border = thin_border
 
-    product_row = 13
+    product_row = 22
 
-    for _, row_data in product_summary.iterrows():
-        sheet[f"D{product_row}"] = row_data["Product"]
-        sheet[f"E{product_row}"] = row_data["Revenue"]
+    for _, row_data in product_analysis.iterrows():
+        sheet.cell(
+            row=product_row,
+            column=1,
+            value=row_data["Product"],
+        )
 
-        sheet[f"D{product_row}"].border = thin_border
-        sheet[f"E{product_row}"].border = thin_border
+        sheet.cell(
+            row=product_row,
+            column=2,
+            value=row_data["Revenue"],
+        )
 
-        sheet[f"E{product_row}"].number_format = (
+        sheet.cell(
+            row=product_row,
+            column=3,
+            value=row_data["Profit"],
+        )
+
+        sheet.cell(
+            row=product_row,
+            column=4,
+            value=row_data["Margin"] / 100,
+        )
+
+        for column_index in range(1, 5):
+            cell = sheet.cell(
+                row=product_row,
+                column=column_index,
+            )
+
+            cell.border = thin_border
+
+            if column_index > 1:
+                cell.alignment = Alignment(
+                    horizontal="right"
+                )
+
+        sheet.cell(
+            row=product_row,
+            column=2,
+        ).number_format = (
             f'{config["currency"]}#,##0'
         )
+
+        sheet.cell(
+            row=product_row,
+            column=3,
+        ).number_format = (
+            f'{config["currency"]}#,##0'
+        )
+
+        sheet.cell(
+            row=product_row,
+            column=4,
+        ).number_format = "0.00%"
 
         product_row += 1
 
@@ -277,22 +512,22 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     # -------------------------------------------------
     product_chart = BarChart()
 
-    product_data = Reference(
+    product_data_ref = Reference(
         sheet,
-        min_col=5,
-        min_row=12,
+        min_col=2,
+        min_row=21,
         max_row=product_row - 1,
     )
 
     product_categories = Reference(
         sheet,
-        min_col=4,
-        min_row=13,
+        min_col=1,
+        min_row=22,
         max_row=product_row - 1,
     )
 
     product_chart.add_data(
-        product_data,
+        product_data_ref,
         titles_from_data=True,
     )
 
@@ -300,17 +535,203 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         product_categories
     )
 
-    product_chart.title = "Top 5 Products"
-    product_chart.y_axis.title = "Revenue"
-    product_chart.x_axis.title = "Product"
-
+    product_chart.type = "bar"
     product_chart.style = 10
-    product_chart.width = 12
-    product_chart.height = 7
+    product_chart.title = "Top 5 Products by Revenue"
+    product_chart.y_axis.title = "Product"
+    product_chart.x_axis.title = "Revenue"
+
+    product_chart.width = 13
+    product_chart.height = 6.5
+
+    product_chart.legend = None
+
+    product_chart.dataLabels = DataLabelList()
+    product_chart.dataLabels.showVal = True
+    product_chart.dataLabels.showSerName = False
+    product_chart.dataLabels.showCatName = False
+    product_chart.dataLabels.showLegendKey = False
+    product_chart.dataLabels.dLblPos = "outEnd"
+
+    product_chart.gapWidth = 60
 
     sheet.add_chart(
         product_chart,
-        "G18",
+        "F20",
+    )
+
+    # -------------------------------------------------
+    # Aylık Analiz
+    # -------------------------------------------------
+    monthly_data = df.copy()
+
+    monthly_data["Revenue"] = (
+        monthly_data["Quantity"]
+        * monthly_data["UnitPrice"]
+    )
+
+    monthly_data["Cost"] = (
+        monthly_data["Quantity"]
+        * monthly_data["UnitCost"]
+    )
+
+    monthly_data["Profit"] = (
+        monthly_data["Revenue"]
+        - monthly_data["Cost"]
+    )
+
+    monthly_data["Month"] = (
+        monthly_data["Date"]
+        .dt.to_period("M")
+        .astype(str)
+    )
+
+    monthly_analysis = (
+        monthly_data
+        .groupby("Month", as_index=False)
+        [["Revenue", "Profit"]]
+        .sum()
+    )
+
+    # -------------------------------------------------
+    # Aylık Tablo
+    # -------------------------------------------------
+    sheet["A30"] = "Monthly Performance"
+    sheet["A30"].font = Font(
+        size=14,
+        bold=True,
+        color="1F1F1F",
+    )
+
+    monthly_headers = [
+        "Month",
+        "Revenue",
+        "Profit",
+    ]
+
+    for column_index, header in enumerate(
+        monthly_headers,
+        start=1,
+    ):
+        cell = sheet.cell(
+            row=31,
+            column=column_index,
+        )
+
+        cell.value = header
+        cell.font = Font(
+            bold=True,
+            color="FFFFFF",
+        )
+        cell.fill = header_fill
+        cell.alignment = Alignment(
+            horizontal="center"
+        )
+        cell.border = thin_border
+
+    monthly_row = 32
+
+    for _, row_data in monthly_analysis.iterrows():
+        sheet.cell(
+            row=monthly_row,
+            column=1,
+            value=row_data["Month"],
+        )
+
+        sheet.cell(
+            row=monthly_row,
+            column=2,
+            value=row_data["Revenue"],
+        )
+
+        sheet.cell(
+            row=monthly_row,
+            column=3,
+            value=row_data["Profit"],
+        )
+
+        for column_index in range(1, 4):
+            cell = sheet.cell(
+                row=monthly_row,
+                column=column_index,
+            )
+
+            cell.border = thin_border
+
+            if column_index > 1:
+                cell.alignment = Alignment(
+                    horizontal="right"
+                )
+
+        sheet.cell(
+            row=monthly_row,
+            column=2,
+        ).number_format = (
+            f'{config["currency"]}#,##0'
+        )
+
+        sheet.cell(
+            row=monthly_row,
+            column=3,
+        ).number_format = (
+            f'{config["currency"]}#,##0'
+        )
+
+        monthly_row += 1
+
+    # -------------------------------------------------
+    # Aylık Revenue Grafiği
+    # -------------------------------------------------
+    monthly_chart = BarChart()
+
+    monthly_data_ref = Reference(
+        sheet,
+        min_col=2,
+        min_row=31,
+        max_row=monthly_row - 1,
+    )
+
+    monthly_categories = Reference(
+        sheet,
+        min_col=1,
+        min_row=32,
+        max_row=monthly_row - 1,
+    )
+
+    monthly_chart.add_data(
+        monthly_data_ref,
+        titles_from_data=True,
+    )
+
+    monthly_chart.set_categories(
+        monthly_categories
+    )
+
+    monthly_chart.type = "col"
+    monthly_chart.style = 10
+    monthly_chart.title = "Monthly Revenue"
+    monthly_chart.y_axis.title = "Revenue"
+    monthly_chart.x_axis.title = "Month"
+
+    monthly_chart.width = 13
+    monthly_chart.height = 6.5
+
+    monthly_chart.legend = None
+
+    monthly_chart.dataLabels = DataLabelList()
+    monthly_chart.dataLabels.showVal = True
+    monthly_chart.dataLabels.showSerName = False
+    monthly_chart.dataLabels.showCatName = False
+    monthly_chart.dataLabels.showLegendKey = False
+    monthly_chart.dataLabels.dLblPos = "outEnd"
+
+    monthly_chart.gapWidth = 60
+
+    monthly_chart.y_axis.scaling.min = 0
+
+    sheet.add_chart(
+        monthly_chart,
+        "F30",
     )
 
     # -------------------------------------------------
@@ -320,6 +741,9 @@ def generate_report(kpis, region_summary, product_summary, df, config):
         "Detail Data"
     )
 
+    detail_sheet.sheet_view.showGridLines = False
+    detail_sheet.freeze_panes = "A2"
+
     for row_data in dataframe_to_rows(
         df,
         index=False,
@@ -327,10 +751,35 @@ def generate_report(kpis, region_summary, product_summary, df, config):
     ):
         detail_sheet.append(row_data)
 
-    detail_sheet.freeze_panes = "A2"
     detail_sheet.auto_filter.ref = (
         detail_sheet.dimensions
     )
+
+    # -------------------------------------------------
+    # Detail Data Tarih Formatı
+    # -------------------------------------------------
+    date_column_index = None
+
+    for column_index, header_cell in enumerate(
+        detail_sheet[1],
+        start=1,
+    ):
+        if header_cell.value == "Date":
+            date_column_index = column_index
+            break
+
+    if date_column_index is not None:
+        date_letter = get_column_letter(
+            date_column_index
+        )
+
+        for row_index in range(
+            2,
+            detail_sheet.max_row + 1,
+        ):
+            detail_sheet[
+                f"{date_letter}{row_index}"
+            ].number_format = "dd.mm.yyyy"
 
     # -------------------------------------------------
     # Detail Data Başlık
@@ -359,7 +808,28 @@ def generate_report(kpis, region_summary, product_summary, df, config):
 
         detail_sheet.column_dimensions[
             column_cells[0].column_letter
-        ].width = length + 3
+        ].width = min(
+            length + 3,
+            30,
+        )
+
+    detail_sheet.sheet_view.zoomScale = 90
+
+    # -------------------------------------------------
+    # Dashboard Print / Page Settings
+    # -------------------------------------------------
+    sheet.print_area = "A1:N53"
+
+    sheet.page_setup.orientation = "landscape"
+    sheet.page_setup.fitToWidth = 1
+    sheet.page_setup.fitToHeight = 0
+
+    sheet.sheet_properties.pageSetUpPr.fitToPage = True
+
+    sheet.page_margins.left = 0.25
+    sheet.page_margins.right = 0.25
+    sheet.page_margins.top = 0.5
+    sheet.page_margins.bottom = 0.5
 
     # -------------------------------------------------
     # Kaydet
