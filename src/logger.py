@@ -1,17 +1,31 @@
+import sys
 from pathlib import Path
+
 from loguru import logger
 
 
 def setup_logger():
     """
     Programın log ayarlarını yapar.
+
+    Normal çalışma ortamında loglar proje kökündeki logs/
+    klasörüne yazılır.
+
+    PyInstaller EXE ortamında ise loglar EXE'nin bulunduğu
+    klasördeki logs/ dizinine yazılır.
     """
 
-    project_root = Path(__file__).resolve().parent.parent
+    if getattr(sys, "frozen", False):
+        project_root = Path(sys.executable).resolve().parent
+    else:
+        project_root = Path(__file__).resolve().parent.parent
 
     log_folder = project_root / "logs"
 
-    log_folder.mkdir(exist_ok=True)
+    log_folder.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     logger.remove()
 
@@ -20,12 +34,12 @@ def setup_logger():
         rotation="1 MB",
         retention="10 days",
         level="INFO",
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     logger.add(
         lambda msg: print(msg, end=""),
-        level="INFO"
+        level="INFO",
     )
 
     return logger
