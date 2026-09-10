@@ -10,7 +10,14 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 
 
-def generate_report(kpis, region_summary, product_summary, df, config):
+def generate_report(
+    kpis,
+    region_summary,
+    product_summary,
+    monthly_summary,
+    df,
+    config,
+):
     # -------------------------------------------------
     # Uygulama / Resource Root
     # -------------------------------------------------
@@ -562,35 +569,14 @@ def generate_report(kpis, region_summary, product_summary, df, config):
 
     # -------------------------------------------------
     # Aylık Analiz
+    # (kpi_calculator.calculate_kpis'ten gelen
+    # monthly_summary kullanılır; burada tekrar
+    # hesaplanmaz.)
     # -------------------------------------------------
-    monthly_data = df.copy()
-
-    monthly_data["Revenue"] = (
-        monthly_data["Quantity"]
-        * monthly_data["UnitPrice"]
-    )
-
-    monthly_data["Cost"] = (
-        monthly_data["Quantity"]
-        * monthly_data["UnitCost"]
-    )
-
-    monthly_data["Profit"] = (
-        monthly_data["Revenue"]
-        - monthly_data["Cost"]
-    )
-
-    monthly_data["Month"] = (
-        monthly_data["Date"]
-        .dt.to_period("M")
-        .astype(str)
-    )
-
     monthly_analysis = (
-        monthly_data
-        .groupby("Month", as_index=False)
-        [["Revenue", "Profit"]]
-        .sum()
+        monthly_summary
+        .sort_values("Month")
+        .reset_index(drop=True)
     )
 
     # -------------------------------------------------

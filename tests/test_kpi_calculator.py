@@ -30,7 +30,7 @@ def build_sample_df():
 def test_total_quantity():
     df = build_sample_df()
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     assert kpis["Total Quantity"] == 35
 
@@ -38,7 +38,7 @@ def test_total_quantity():
 def test_total_revenue():
     df = build_sample_df()
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     # (10*100) + (5*100) + (20*50) = 1000 + 500 + 1000
     assert kpis["Total Revenue"] == 2500
@@ -47,7 +47,7 @@ def test_total_revenue():
 def test_total_cost():
     df = build_sample_df()
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     # (10*60) + (5*60) + (20*30) = 600 + 300 + 600
     assert kpis["Total Cost"] == 1500
@@ -56,7 +56,7 @@ def test_total_cost():
 def test_total_profit():
     df = build_sample_df()
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     assert kpis["Total Profit"] == 1000
 
@@ -64,7 +64,7 @@ def test_total_profit():
 def test_profit_margin():
     df = build_sample_df()
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     # 1000 / 2500 * 100 = 40.0
     assert kpis["Profit Margin"] == pytest.approx(40.0)
@@ -80,7 +80,7 @@ def test_profit_margin_zero_revenue_does_not_crash():
         "UnitCost": [60],
     })
 
-    kpis, _, _ = calculate_kpis(df)
+    kpis, _, _, _ = calculate_kpis(df)
 
     assert kpis["Total Revenue"] == 0
     assert kpis["Profit Margin"] == 0
@@ -96,7 +96,7 @@ def test_empty_dataframe_does_not_crash():
         "UnitCost",
     ])
 
-    kpis, region_summary, product_summary = calculate_kpis(df)
+    kpis, region_summary, product_summary, _ = calculate_kpis(df)
 
     assert kpis["Total Quantity"] == 0
     assert kpis["Total Revenue"] == 0
@@ -108,7 +108,7 @@ def test_empty_dataframe_does_not_crash():
 def test_region_summary_columns_and_sort_order():
     df = build_sample_df()
 
-    _, region_summary, _ = calculate_kpis(df)
+    _, region_summary, _, _ = calculate_kpis(df)
 
     assert list(region_summary.columns) == [
         "Region",
@@ -128,7 +128,7 @@ def test_region_summary_columns_and_sort_order():
 def test_product_summary_columns_and_sort_order():
     df = build_sample_df()
 
-    _, _, product_summary = calculate_kpis(df)
+    _, _, product_summary, _ = calculate_kpis(df)
 
     assert list(product_summary.columns) == [
         "Product",
@@ -170,7 +170,7 @@ class TestRealSampleDatasetBaseline:
         return calculate_kpis(df)
 
     def test_baseline_totals(self, real_kpis):
-        kpis, _, _ = real_kpis
+        kpis, _, _, _ = real_kpis
 
         assert kpis["Total Quantity"] == 1055
         assert kpis["Total Revenue"] == 731482
@@ -179,7 +179,7 @@ class TestRealSampleDatasetBaseline:
         assert kpis["Profit Margin"] == pytest.approx(32.63, abs=0.01)
 
     def test_baseline_region_revenue(self, real_kpis):
-        _, region_summary, _ = real_kpis
+        _, region_summary, _, _ = real_kpis
 
         expected = {
             "Denizli": 254700,
@@ -199,7 +199,7 @@ class TestRealSampleDatasetBaseline:
         assert actual == expected
 
     def test_baseline_top5_product_revenue(self, real_kpis):
-        _, _, product_summary = real_kpis
+        _, _, product_summary, _ = real_kpis
 
         expected_top5 = {
             "Battery": 221400,
@@ -219,3 +219,19 @@ class TestRealSampleDatasetBaseline:
         )
 
         assert actual == expected_top5
+
+    def test_baseline_monthly_revenue_and_profit(self, real_kpis):
+        _, _, _, monthly_summary = real_kpis
+
+        expected = {
+            "2026-01": (242817, 78907),
+            "2026-02": (249335, 82185),
+            "2026-03": (239330, 77580),
+        }
+
+        actual = {
+            row["Month"]: (row["Revenue"], row["Profit"])
+            for _, row in monthly_summary.iterrows()
+        }
+
+        assert actual == expected

@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def calculate_kpis(df):
     # -------------------------------------------------
     # Satış ve maliyet hesaplamaları
@@ -78,4 +81,41 @@ def calculate_kpis(df):
         .fillna(0)
     )
 
-    return kpis, region_summary, product_summary
+    # -------------------------------------------------
+    # Aylara göre satış özeti
+    # (Excel ve PDF raporlarının İKİSİ DE bu tek kaynağı
+    # kullanır; sayı tutarsızlığı riski burada engellenir.)
+    # -------------------------------------------------
+    if not df.empty and "Date" in df.columns:
+        month_series = (
+            pd.to_datetime(df["Date"])
+            .dt.to_period("M")
+            .astype(str)
+        )
+
+        monthly_summary = (
+            df.assign(Month=month_series)
+            .groupby("Month", as_index=False)[
+                ["Revenue", "Cost", "Profit"]
+            ]
+            .sum()
+            .sort_values("Month")
+            .reset_index(drop=True)
+        )
+
+        monthly_summary["Margin"] = (
+            monthly_summary["Profit"]
+            .div(monthly_summary["Revenue"])
+            .mul(100)
+            .fillna(0)
+        )
+    else:
+        monthly_summary = df.assign(
+            Month=[],
+            Revenue=[],
+            Cost=[],
+            Profit=[],
+            Margin=[],
+        )[["Month", "Revenue", "Cost", "Profit", "Margin"]]
+
+    return kpis, region_summary, product_summary, monthly_summary

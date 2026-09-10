@@ -51,17 +51,26 @@ def main():
 
         df = clean_data(df)
 
-        kpis, region_summary, product_summary = calculate_kpis(df)
+        kpis, region_summary, product_summary, monthly_summary = (
+            calculate_kpis(df)
+        )
 
         generate_report(
             kpis,
             region_summary,
             product_summary,
+            monthly_summary,
             df,
             config,
         )
 
-        generate_pdf_report(kpis, config)
+        generate_pdf_report(
+            kpis,
+            region_summary,
+            product_summary,
+            monthly_summary,
+            config,
+        )
 
         report_file = project_root / config["output_file"]
         archive_folder = project_root / "data" / "archive"

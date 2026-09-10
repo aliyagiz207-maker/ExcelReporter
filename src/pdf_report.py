@@ -3,14 +3,28 @@ from datetime import datetime
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
+    Image,
+    KeepTogether,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
 )
+
+HEADER_COLOR = colors.HexColor("#1F4E78")
+SECTION_ROW_COLOR = colors.HexColor("#EAF2F8")
+
+FONT_REGULAR = "DejaVuSans"
+FONT_BOLD = "DejaVuSans-Bold"
+
+_FONTS_REGISTERED = False
 
 
 def get_application_root():
@@ -20,132 +34,306 @@ def get_application_root():
     return Path(__file__).resolve().parent.parent
 
 
-def generate_pdf_report(kpis, config):
-    project_root = get_application_root()
+def get_resource_root():
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
 
-    output_folder = project_root / "data" / "output"
-    output_folder.mkdir(parents=True, exist_ok=True)
+    return get_application_root()
 
-    output_file = output_folder / "Report.pdf"
 
-    document = SimpleDocTemplate(str(output_file))
+def register_fonts():
+    """
+    Türkçe karakterleri (İ, ı, ğ, ş, ö, ü, ç) doğru gösterebilmek
+    için Unicode destekli bir font kaydeder. ReportLab'ın varsayılan
+    Helvetica fontu bu karakterleri desteklemez ve boş kutu olarak
+    basar; bu fonksiyon çağrılmadan PDF üretilmemelidir.
+    """
+    global _FONTS_REGISTERED
 
-    styles = getSampleStyleSheet()
-    elements = []
+    if _FONTS_REGISTERED:
+        return
 
-    # -----------------------------------------
-    # Başlık
-    # -----------------------------------------
+    resource_root = get_resource_root()
+    fonts_folder = resource_root / "assets" / "fonts"
 
-    elements.append(
-        Paragraph(
-            config["company_name"],
-            styles["Title"],
-        )
+    pdfmetrics.registerFont(
+        TTFont(FONT_REGULAR, str(fonts_folder / "DejaVuSans.ttf"))
     )
 
-    elements.append(
-        Paragraph(
-            config["dashboard_title"],
-            styles["Heading2"],
-        )
+    pdfmetrics.registerFont(
+        TTFont(FONT_BOLD, str(fonts_folder / "DejaVuSans-Bold.ttf"))
     )
 
-    elements.append(
-        Spacer(1, 20)
+    _FONTS_REGISTERED = True
+
+
+def build_styles():
+    base_styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "TitleTR",
+        parent=base_styles["Title"],
+        fontName=FONT_BOLD,
     )
 
-    # -----------------------------------------
-    # KPI Tablosu
-    # -----------------------------------------
+    heading2_style = ParagraphStyle(
+        "Heading2TR",
+        parent=base_styles["Heading2"],
+        fontName=FONT_BOLD,
+    )
 
+    heading3_style = ParagraphStyle(
+        "Heading3TR",
+        parent=base_styles["Heading3"],
+        fontName=FONT_BOLD,
+    )
+
+    normal_style = ParagraphStyle(
+        "NormalTR",
+        parent=base_styles["Normal"],
+        fontName=FONT_REGULAR,
+    )
+
+    italic_style = ParagraphStyle(
+        "ItalicTR",
+        parent=base_styles["Italic"],
+        fontName=FONT_REGULAR,
+    )
+
+    return {
+        "Title": title_style,
+        "Heading2": heading2_style,
+        "Heading3": heading3_style,
+        "Normal": normal_style,
+        "Italic": italic_style,
+    }
+
+
+def format_currency(value, config):
+    return f'{config["currency"]}{value:,.0f}'
+
+
+def format_percent(value):
+    return f"{value:.2f}%"
+
+
+def build_kpi_table(kpis, config):
     table_data = [["Metric", "Value"]]
 
     for key, value in kpis.items():
-
-        if isinstance(value, float):
-
-            if "Margin" in key:
-                display = f"{value:.2f}%"
-            else:
-                display = f'{config["currency"]}{value:,.2f}'
-
+        if "Margin" in key:
+            display = format_percent(value)
+        elif "Quantity" in key:
+            display = f"{value:,.0f}"
         else:
+            display = format_currency(value, config)
 
-            if "Quantity" in key:
-                display = f"{value}"
-            else:
-                display = f'{config["currency"]}{value:,}'
+        table_data.append([key, display])
 
-        table_data.append(
-            [key, display]
-        )
-
-    table = Table(
-        table_data,
-        colWidths=[240, 140],
-    )
+    table = Table(table_data, colWidths=[8 * cm, 6 * cm])
 
     table.setStyle(
         TableStyle(
             [
-                (
-                    "BACKGROUND",
-                    (0, 0),
-                    (-1, 0),
-                    colors.HexColor("#1F4E78"),
-                ),
-                (
-                    "TEXTCOLOR",
-                    (0, 0),
-                    (-1, 0),
-                    colors.white,
-                ),
-                (
-                    "FONTNAME",
-                    (0, 0),
-                    (-1, 0),
-                    "Helvetica-Bold",
-                ),
-                (
-                    "ALIGN",
-                    (0, 0),
-                    (-1, -1),
-                    "CENTER",
-                ),
-                (
-                    "GRID",
-                    (0, 0),
-                    (-1, -1),
-                    0.5,
-                    colors.grey,
-                ),
-                (
-                    "BACKGROUND",
-                    (0, 1),
-                    (-1, -1),
-                    colors.beige,
-                ),
-                (
-                    "BOTTOMPADDING",
-                    (0, 0),
-                    (-1, 0),
-                    8,
-                ),
+                ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
+                ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
+                ("BACKGROUND", (0, 0), (-1, 0), HEADER_COLOR),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                ("TOPPADDING", (0, 0), (-1, 0), 8),
             ]
         )
     )
 
-    elements.append(table)
+    return table
 
-    elements.append(
-        Spacer(1, 20)
+
+def build_analysis_table(
+    dataframe,
+    name_column,
+    config,
+    column_widths,
+):
+    table_data = [[name_column, "Revenue", "Profit", "Margin"]]
+
+    for _, row in dataframe.iterrows():
+        table_data.append(
+            [
+                str(row[name_column]),
+                format_currency(row["Revenue"], config),
+                format_currency(row["Profit"], config),
+                format_percent(row["Margin"]),
+            ]
+        )
+
+    table = Table(table_data, colWidths=column_widths)
+
+    table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
+                ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
+                ("BACKGROUND", (0, 0), (-1, 0), HEADER_COLOR),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+                ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                (
+                    "ROWBACKGROUNDS",
+                    (0, 1),
+                    (-1, -1),
+                    [colors.white, SECTION_ROW_COLOR],
+                ),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+                ("TOPPADDING", (0, 0), (-1, 0), 6),
+            ]
+        )
     )
 
-    # -----------------------------------------
-    # Tarih
-    # -----------------------------------------
+    return table
 
+
+def generate_pdf_report(
+    kpis,
+    region_summary,
+    product_summary,
+    monthly_summary,
+    config,
+):
+    register_fonts()
+    styles = build_styles()
+
+    application_root = get_application_root()
+    resource_root = get_resource_root()
+
+    output_folder = application_root / "data" / "output"
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    output_file = output_folder / "Report.pdf"
+
+    document = SimpleDocTemplate(
+        str(output_file),
+        pagesize=A4,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+    )
+
+    elements = []
+
+    # -----------------------------------------
+    # Logo
+    # -----------------------------------------
+    logo_file = resource_root / config["logo_path"]
+
+    if logo_file.exists():
+        logo = Image(str(logo_file), width=3.5 * cm, height=1.75 * cm)
+        logo.hAlign = "RIGHT"
+        elements.append(logo)
+
+    # -----------------------------------------
+    # Başlık
+    # -----------------------------------------
+    elements.append(
+        Paragraph(config["company_name"], styles["Title"])
+    )
+
+    elements.append(
+        Paragraph(config["dashboard_title"], styles["Heading2"])
+    )
+
+    elements.append(Spacer(1, 12))
+
+    # -----------------------------------------
+    # KPI Tablosu
+    # -----------------------------------------
+    elements.append(
+        Paragraph("Key Performance Indicators", styles["Heading3"])
+    )
+    elements.append(Spacer(1, 6))
+    elements.append(build_kpi_table(kpis, config))
+    elements.append(Spacer(1, 18))
+
+    # -----------------------------------------
+    # Regional Performance
+    # -----------------------------------------
+    if not region_summary.empty:
+        elements.append(
+            KeepTogether(
+                [
+                    Paragraph(
+                        "Regional Performance", styles["Heading3"]
+                    ),
+                    Spacer(1, 6),
+                    build_analysis_table(
+                        region_summary,
+                        "Region",
+                        config,
+                        column_widths=[5 * cm, 4 * cm, 4 * cm, 3 * cm],
+                    ),
+                ]
+            )
+        )
+        elements.append(Spacer(1, 18))
+
+    # -----------------------------------------
+    # Top 5 Products
+    # -----------------------------------------
+    if not product_summary.empty:
+        top5 = (
+            product_summary
+            .sort_values("Revenue", ascending=False)
+            .head(5)
+        )
+
+        elements.append(
+            KeepTogether(
+                [
+                    Paragraph(
+                        "Top 5 Products", styles["Heading3"]
+                    ),
+                    Spacer(1, 6),
+                    build_analysis_table(
+                        top5,
+                        "Product",
+                        config,
+                        column_widths=[5 * cm, 4 * cm, 4 * cm, 3 * cm],
+                    ),
+                ]
+            )
+        )
+        elements.append(Spacer(1, 18))
+
+    # -----------------------------------------
+    # Monthly Performance
+    # -----------------------------------------
+    if not monthly_summary.empty:
+        elements.append(
+            KeepTogether(
+                [
+                    Paragraph(
+                        "Monthly Performance", styles["Heading3"]
+                    ),
+                    Spacer(1, 6),
+                    build_analysis_table(
+                        monthly_summary,
+                        "Month",
+                        config,
+                        column_widths=[5 * cm, 4 * cm, 4 * cm, 3 * cm],
+                    ),
+                ]
+            )
+        )
+        elements.append(Spacer(1, 18))
+
+    # -----------------------------------------
+    # Alt Bilgi
+    # -----------------------------------------
     elements.append(
         Paragraph(
             f"Generated: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
@@ -153,19 +341,10 @@ def generate_pdf_report(kpis, config):
         )
     )
 
-    elements.append(
-        Spacer(1, 12)
-    )
-
-    # -----------------------------------------
-    # Alt Bilgi
-    # -----------------------------------------
+    elements.append(Spacer(1, 6))
 
     elements.append(
-        Paragraph(
-            "Generated by ExcelReporter",
-            styles["Italic"],
-        )
+        Paragraph("Generated by ExcelReporter", styles["Italic"])
     )
 
     document.build(elements)
