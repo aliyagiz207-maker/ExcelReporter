@@ -1,54 +1,76 @@
 # Excel Reporter
 
-Excel Reporter, işletmeler için Excel ve CSV dosyalarını otomatik olarak analiz eden, KPI hesaplayan ve Excel ile PDF formatında rapor oluşturan Python tabanlı bir otomasyon uygulamasıdır.
+Excel Reporter; şirketlerin elle hazırladığı satış raporlarını otomatikleştiren,
+Excel/CSV verilerini okuyup temizleyen, doğrulayan, KPI hesaplayan ve
+profesyonel Excel dashboard + PDF yönetici özeti üreten bir Python masaüstü
+uygulamasıdır. Windows için tek dosya (.exe) olarak paketlenmiştir.
+
+> **Not:** Bu depo özel (private) bir projedir. Kod, telif hakkı sahibinin
+> izni olmadan kopyalanamaz, dağıtılamaz veya kullanılamaz. Bkz. [LICENSE](LICENSE).
+
+---
+
+## Ekran Görüntüleri
+
+**Excel Dashboard**
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**PDF Yönetici Özeti**
+
+![PDF Report](docs/screenshots/pdf_report.png)
 
 ---
 
 ## Özellikler
 
-- Birden fazla Excel dosyasını otomatik okuma
-- CSV dosyalarını destekleme
-- Veri doğrulama
-- Veri temizleme
-- KPI (Temel Performans Göstergeleri) hesaplama
-- Excel Dashboard oluşturma
-- PDF raporu oluşturma
-- Bölgelere göre gelir analizi
-- En çok gelir getiren ürünler analizi
-- Firma logosu desteği
-- Otomatik rapor arşivleme
-- JSON ile yapılandırılabilir yapı
-- Ay bazlı raporlama (`--month` parametresi)
+- Birden fazla Excel/CSV dosyasını otomatik okuma ve birleştirme
+- Veri doğrulama: eksik kolon, sayısal olmayan değer, geçersiz tarih,
+  negatif değer kontrolü
+- Veri temizleme: boş satır ve tekrar eden kayıt temizliği
+- KPI hesaplama: toplam ciro, maliyet, kâr, kâr marjı
+- Bölgesel, ürün bazlı (Top 5) ve aylık performans analizi
+- Excel Dashboard: KPI kartları, tablolar, 3 grafik, kurumsal logo
+- Tek sayfalık PDF yönetici özeti (Türkçe karakter desteğiyle)
+- Otomatik rapor arşivleme (zaman damgalı)
+- JSON ile yapılandırılabilir kurum bilgisi (isim, logo, para birimi)
+- Tkinter tabanlı grafik arayüz (GUI)
+- PyInstaller ile tek dosya Windows EXE paketleme
+- **29 otomatik test** (KPI doğruluğu, validation, edge case'ler,
+  gerçek veri baseline karşılaştırması)
 
 ---
 
 ## Kullanılan Teknolojiler
 
 - Python 3
-- Pandas
-- OpenPyXL
-- ReportLab
-- Loguru
+- pandas, openpyxl (Excel işleme)
+- ReportLab (PDF üretimi, Unicode/Türkçe font desteği)
+- Loguru (loglama)
+- pytest (test)
+- PyInstaller (EXE paketleme)
 
 ---
 
 ## Proje Yapısı
 
-```text
+```
 ExcelReporter/
 │
 ├── assets/
-│   └── logo.png
+│   ├── logo.png
+│   └── fonts/              (PDF için Türkçe karakter destekli fontlar)
 │
 ├── data/
-│   ├── archive/
-│   ├── input/
-│   └── output/
+│   ├── input/               (örnek/kaynak veri)
+│   ├── output/               (üretilen rapor - otomatik oluşur)
+│   └── archive/              (arşivlenen raporlar - otomatik oluşur)
 │
-├── logs/
-├── src/
+├── src/                      (kaynak kod)
+├── tests/                    (29 otomatik test)
 ├── config.json
 ├── requirements.txt
+├── ExcelReporter.spec         (PyInstaller yapılandırması)
 └── README.md
 ```
 
@@ -56,35 +78,11 @@ ExcelReporter/
 
 ## Kurulum
 
-Projeyi bilgisayarınıza indirin:
-
-```bash
+```
 git clone https://github.com/aliyagiz207-maker/ExcelReporter.git
-```
-
-Proje klasörüne girin:
-
-```bash
 cd ExcelReporter
-```
-
-Sanal ortam oluşturun:
-
-```bash
 python -m venv .venv
-```
-
-Sanal ortamı etkinleştirin:
-
-**Windows**
-
-```bash
 .venv\Scripts\activate
-```
-
-Gerekli kütüphaneleri yükleyin:
-
-```bash
 pip install -r requirements.txt
 ```
 
@@ -92,72 +90,51 @@ pip install -r requirements.txt
 
 ## Kullanım
 
-Tüm Excel ve CSV dosyalarını işlemek için:
-
-```bash
+```
 python src/main.py
-```
-
-Sadece belirli ayları işlemek için:
-
-```bash
 python src/main.py --month january
-```
-
-Birden fazla ay seçmek için:
-
-```bash
 python src/main.py --month january march
 ```
 
----
+Testleri çalıştırmak için:
 
-## Oluşturulan Çıktılar
+```
+python -m pytest -v
+```
 
-Program çalıştırıldığında aşağıdaki dosyalar oluşturulur:
+Windows EXE üretmek için:
 
-- Excel Dashboard (`.xlsx`)
-- PDF Raporu (`.pdf`)
-- Arşivlenmiş Excel raporları
-- Uygulama logları
+```
+pyinstaller ExcelReporter.spec --clean
+```
 
 ---
 
 ## Yapılandırma
 
-Tüm uygulama ayarları `config.json` dosyası üzerinden değiştirilebilir.
-
-Örnek:
+Tüm uygulama ayarları `config.json` üzerinden değiştirilebilir:
 
 ```json
 {
-    "company_name": "Honda Terakki",
+    "company_name": "Örnek Şirket A.Ş.",
     "dashboard_title": "Monthly Sales Dashboard",
     "currency": "$",
     "logo_path": "assets/logo.png",
-    "output_file": "data/output/Honda_Report.xlsx"
+    "output_file": "data/output/Report.xlsx"
 }
 ```
 
 ---
 
-## Gelecek Sürümler
+## Lisans / Kullanım Koşulları
 
-Planlanan geliştirmeler:
-
-- Dashboard grafiklerinin geliştirilmesi
-- Daha fazla grafik türü
-- Komut satırı seçeneklerinin artırılması
-- Web arayüzü
-- E-posta ile otomatik rapor gönderimi
-- Bulut depolama desteği
+Bu proje özeldir ve tüm hakları saklıdır. Ayrıntılar için [LICENSE](LICENSE)
+dosyasına bakınız. Kullanım, kopyalama veya dağıtım için yazılı izin
+gereklidir.
 
 ---
 
 ## Geliştirici
 
 **Ali Yağız Demir**
-
-
-GitHub:
-https://github.com/aliyagiz207-maker
+GitHub: <https://github.com/aliyagiz207-maker>
