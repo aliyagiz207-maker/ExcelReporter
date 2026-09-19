@@ -5,8 +5,8 @@ Excel/CSV verilerini okuyup temizleyen, doğrulayan, KPI hesaplayan ve
 profesyonel Excel dashboard + PDF yönetici özeti üreten bir Python masaüstü
 uygulamasıdır. Windows için tek dosya (.exe) olarak paketlenmiştir.
 
-> **Not:** Bu depo özel (private) bir projedir. Kod, telif hakkı sahibinin
-> izni olmadan kopyalanamaz, dağıtılamaz veya kullanılamaz. Bkz. [LICENSE](LICENSE).
+> **Not:** Kaynak kod telif hakkı ile korunmaktadır. İzinsiz kopyalanamaz,
+> dağıtılamaz veya ticari amaçla kullanılamaz. Bkz. [LICENSE](LICENSE).
 
 ---
 
@@ -58,7 +58,7 @@ uygulamasıdır. Windows için tek dosya (.exe) olarak paketlenmiştir.
 ExcelReporter/
 │
 ├── assets/
-│   ├── logo.png
+│   ├── logo_placeholder.png
 │   └── fonts/              (PDF için Türkçe karakter destekli fontlar)
 │
 ├── data/
@@ -119,8 +119,8 @@ Tüm uygulama ayarları `config.json` üzerinden değiştirilebilir:
     "company_name": "Örnek Şirket A.Ş.",
     "dashboard_title": "Monthly Sales Dashboard",
     "currency": "$",
-    "logo_path": "assets/logo.png",
-    "output_file": "data/output/Report.xlsx"
+    "logo_path": "assets/logo_placeholder.png",
+    "output_file": "data/output/Rapor.xlsx"
 }
 ```
 

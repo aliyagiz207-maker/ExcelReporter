@@ -1,7 +1,7 @@
 {
-    "company_name": "Honda Terakki",
+    "company_name": "Örnek Şirket A.Ş.",
     "dashboard_title": "Aylık Satış Panosu",
     "currency": "₺",
-    "logo_path": "assets/logo.png",
-    "output_file": "data/output/Honda_Report.xlsx"
+    "logo_path": "assets/logo_placeholder.png",
+    "output_file": "data/output/Rapor.xlsx"
 }
