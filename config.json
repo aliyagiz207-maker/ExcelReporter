@@ -1,7 +1,7 @@
 {
     "company_name": "Honda Terakki",
-    "dashboard_title": "Monthly Sales Dashboard",
-    "currency": "$",
+    "dashboard_title": "Aylık Satış Panosu",
+    "currency": "₺",
     "logo_path": "assets/logo.png",
     "output_file": "data/output/Honda_Report.xlsx"
 }
