@@ -19,6 +19,21 @@ def generate_report(
     config,
 ):
     # -------------------------------------------------
+    # Görüntüleme etiketleri (Türkçe)
+    # NOT: kpis sözlüğündeki asıl anahtarlar (key) İngilizce
+    # kalır — kod bu anahtarlarda "Margin"/"Quantity" gibi
+    # metin araması yapıyor. Sadece EKRANA YAZILAN metin
+    # burada çevrilir, mantık bundan etkilenmez.
+    # -------------------------------------------------
+    KPI_LABELS_TR = {
+        "Total Quantity": "Toplam Adet",
+        "Total Revenue": "Toplam Ciro",
+        "Total Cost": "Toplam Maliyet",
+        "Total Profit": "Toplam Kâr",
+        "Profit Margin": "Kâr Marjı",
+    }
+
+    # -------------------------------------------------
     # Uygulama / Resource Root
     # -------------------------------------------------
     if getattr(sys, "frozen", False):
@@ -203,7 +218,7 @@ def generate_report(
         label = sheet[f"{start_letter}5"]
         value_cell_obj = sheet[f"{start_letter}6"]
 
-        label.value = key
+        label.value = KPI_LABELS_TR.get(key, key)
         label.fill = kpi_fill
         label.font = Font(
             size=10,
@@ -260,7 +275,7 @@ def generate_report(
     # -------------------------------------------------
     # Bölge Tablosu
     # -------------------------------------------------
-    sheet["A10"] = "Regional Performance"
+    sheet["A10"] = "Bölgesel Performans"
     sheet["A10"].font = Font(
         size=14,
         bold=True,
@@ -268,10 +283,10 @@ def generate_report(
     )
 
     headers = [
-        "Region",
-        "Revenue",
-        "Profit",
-        "Margin",
+        "Bölge",
+        "Ciro",
+        "Kâr",
+        "Marj",
     ]
 
     for column_index, header in enumerate(headers, start=1):
@@ -382,9 +397,9 @@ def generate_report(
 
     region_chart.type = "bar"
     region_chart.style = 10
-    region_chart.title = "Revenue by Region"
-    region_chart.y_axis.title = "Region"
-    region_chart.x_axis.title = "Revenue"
+    region_chart.title = "Bölgeye Göre Ciro"
+    region_chart.y_axis.title = "Bölge"
+    region_chart.x_axis.title = "Ciro"
 
     region_chart.width = 13
     region_chart.height = 6.5
@@ -421,7 +436,7 @@ def generate_report(
     # -------------------------------------------------
     # Top 5 Products Tablosu
     # -------------------------------------------------
-    sheet["A20"] = "Top 5 Products"
+    sheet["A20"] = "En Çok Satan 5 Ürün"
     sheet["A20"].font = Font(
         size=14,
         bold=True,
@@ -430,10 +445,10 @@ def generate_report(
 
     for column_index, header in enumerate(
         [
-            "Product",
-            "Revenue",
-            "Profit",
-            "Margin",
+            "Ürün",
+            "Ciro",
+            "Kâr",
+            "Marj",
         ],
         start=1,
     ):
@@ -544,9 +559,9 @@ def generate_report(
 
     product_chart.type = "bar"
     product_chart.style = 10
-    product_chart.title = "Top 5 Products by Revenue"
-    product_chart.y_axis.title = "Product"
-    product_chart.x_axis.title = "Revenue"
+    product_chart.title = "Ciroya Göre En Çok Satan 5 Ürün"
+    product_chart.y_axis.title = "Ürün"
+    product_chart.x_axis.title = "Ciro"
 
     product_chart.width = 13
     product_chart.height = 6.5
@@ -582,7 +597,7 @@ def generate_report(
     # -------------------------------------------------
     # Aylık Tablo
     # -------------------------------------------------
-    sheet["A30"] = "Monthly Performance"
+    sheet["A30"] = "Aylık Performans"
     sheet["A30"].font = Font(
         size=14,
         bold=True,
@@ -590,9 +605,9 @@ def generate_report(
     )
 
     monthly_headers = [
-        "Month",
-        "Revenue",
-        "Profit",
+        "Ay",
+        "Ciro",
+        "Kâr",
     ]
 
     for column_index, header in enumerate(
@@ -695,9 +710,9 @@ def generate_report(
 
     monthly_chart.type = "col"
     monthly_chart.style = 10
-    monthly_chart.title = "Monthly Revenue"
-    monthly_chart.y_axis.title = "Revenue"
-    monthly_chart.x_axis.title = "Month"
+    monthly_chart.title = "Aylık Ciro"
+    monthly_chart.y_axis.title = "Ciro"
+    monthly_chart.x_axis.title = "Ay"
 
     monthly_chart.width = 13
     monthly_chart.height = 6.5
